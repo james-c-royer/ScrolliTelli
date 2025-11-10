@@ -1,0 +1,46 @@
+body {
+  margin: 20px;
+  background-color: #f9f9f9;
+}
+
+nav.navbar {
+  justify-content: center;
+  text-align: center;
+}
+
+.banner {
+  color: white;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.container-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 20px;
+  gap: 20px;
+}
+
+.imgPreviewDiv {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-box {
+  width: 250px;
+  height: 150px;
+  background-color: #efefef;
+  border: 1px solid #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 500;
+}
