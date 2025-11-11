@@ -1,0 +1,196 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: #f9f9f9;
+}
+
+.navbar {
+  background-color: #000;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.banner {
+  margin: 0;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.editor-container {
+  margin-top: 80px;
+  padding: 20px;
+}
+
+.section-editor {
+  margin-bottom: 40px;
+  border: 2px solid #333;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+}
+
+.section-header {
+  background: #333;
+  color: white;
+  padding: 10px 15px;
+  margin: -20px -20px 20px -20px;
+  border-radius: 6px 6px 0 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.editor-content {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.image-editor {
+  flex: 0 0 45%;
+  max-width: 45%;
+}
+
+.canvas-container {
+  position: relative;
+  width: 100%;
+  background: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #ccc;
+}
+
+.canvas-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.base-image,
+.blur-canvas,
+.draw-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.blur-canvas,
+.draw-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.draw-canvas {
+  cursor: crosshair;
+}
+
+.canvas-controls {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.canvas-controls button {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.blur-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.blur-control label {
+  font-weight: bold;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.blur-control input[type="range"] {
+  flex: 1;
+  min-width: 150px;
+}
+
+.blur-control .blur-value {
+  min-width: 40px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.text-editor {
+  flex: 1;
+}
+
+.text-editor h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 300px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  resize: vertical;
+}
+
+.export-section {
+  padding: 40px 20px;
+  text-align: center;
+  background: white;
+  border-top: 3px solid #000;
+  margin-top: 40px;
+}
+
+.export-section button {
+  padding: 15px 40px;
+  font-size: 18px;
+  background-color: #000;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.export-section button:hover {
+  background-color: #333;
+}
+
+@media (max-width: 1024px) {
+  .editor-content {
+    flex-direction: column;
+  }
+  
+  .image-editor {
+    flex: 1;
+    max-width: 100%;
+  }
+}

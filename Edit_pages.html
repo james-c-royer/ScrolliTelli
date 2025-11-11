@@ -5,10 +5,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ScrolliTelli Edit Pages</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="edit.css">
 </head>
 
 <body>
+  <nav class="navbar">
+    <h1 class="banner">ScrolliTelli Creation Tool - Edit Your Story</h1>
+  </nav>
 
+  <div class="editor-container" id="editor-container">
+    <!-- Section editors will be dynamically generated here -->
+  </div>
+
+  <div class="export-section">
+    <h3>Ready to Export?</h3>
+    <p>Once exported, your presentation will feature smooth scrolling where images stay fixed while text reveals, then transitions to the next image.</p>
+    <button id="export-btn" class="btn btn-dark btn-lg">Export as HTML</button>
+  </div>
+
+  <script src="scripts/edit.js"></script>
 </body>
 
 </html>
