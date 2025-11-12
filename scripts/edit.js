@@ -1,10 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
   const editorContainer = document.getElementById("editor-container");
   const exportBtn = document.getElementById("export-btn");
-  
+
   const storedImage = localStorage.getItem("uploadedImage");
   const numSections = parseInt(localStorage.getItem("numImages")) || 1;
-  
+
   if (!storedImage) {
     editorContainer.innerHTML = '<div style="padding: 40px; text-align: center;">No image found – go back and upload one.</div>';
     return;
@@ -62,22 +62,29 @@ function createSectionEditor(index, imageSrc) {
   const drawCanvas = sectionDiv.querySelector(`#draw-canvas-${index}`);
   const textInput = sectionDiv.querySelector(`#text-input-${index}`);
   const blurAmount = sectionDiv.querySelector(`#blur-amount-${index}`);
-  const blurValue = sectionDiv.querySelector(`#blur-value-${index}`);
-  
+
   let currentShape = null;
   let isDrawing = false;
   let startX, startY;
   let drawMode = null;
 
   baseImg.onload = () => {
-    const width = baseImg.offsetWidth;
-    const height = baseImg.offsetHeight;
-    
-    blurCanvas.width = width;
-    blurCanvas.height = height;
-    drawCanvas.width = width;
-    drawCanvas.height = height;
-    
+    // Get the actual rendered dimensions of the image
+    const imgWidth = baseImg.width;
+    const imgHeight = baseImg.height;
+
+    // Set canvas dimensions to match the actual displayed image
+    blurCanvas.width = imgWidth;
+    blurCanvas.height = imgHeight;
+    drawCanvas.width = imgWidth;
+    drawCanvas.height = imgHeight;
+
+    // Also set the canvas display size to match
+    blurCanvas.style.width = imgWidth + 'px';
+    blurCanvas.style.height = imgHeight + 'px';
+    drawCanvas.style.width = imgWidth + 'px';
+    drawCanvas.style.height = imgHeight + 'px';
+
     applyBlur();
   };
 
@@ -105,7 +112,6 @@ function createSectionEditor(index, imageSrc) {
   });
 
   blurAmount.addEventListener("input", () => {
-    blurValue.textContent = blurAmount.value + "px";
     applyBlur();
   });
 
@@ -113,22 +119,22 @@ function createSectionEditor(index, imageSrc) {
     if (!drawMode) return;
     isDrawing = true;
     const rect = drawCanvas.getBoundingClientRect();
-    startX = e.clientX - rect.left;
-    startY = e.clientY - rect.top;
+    startX = (e.clientX - rect.left) * (drawCanvas.width / rect.width);
+    startY = (e.clientY - rect.top) * (drawCanvas.height / rect.height);
   });
 
   drawCanvas.addEventListener("mousemove", (e) => {
     if (!isDrawing) return;
     const rect = drawCanvas.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
-    
+    const currentX = (e.clientX - rect.left) * (drawCanvas.width / rect.width);
+    const currentY = (e.clientY - rect.top) * (drawCanvas.height / rect.height);
+
     const ctx = drawCanvas.getContext("2d");
     ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     ctx.strokeStyle = "#00ff00";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    
+
     if (drawMode === "circle") {
       const radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
       ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
@@ -137,18 +143,18 @@ function createSectionEditor(index, imageSrc) {
       const height = currentY - startY;
       ctx.rect(startX, startY, width, height);
     }
-    
+
     ctx.stroke();
   });
 
   drawCanvas.addEventListener("mouseup", (e) => {
     if (!isDrawing) return;
     isDrawing = false;
-    
+
     const rect = drawCanvas.getBoundingClientRect();
-    const endX = e.clientX - rect.left;
-    const endY = e.clientY - rect.top;
-    
+    const endX = (e.clientX - rect.left) * (drawCanvas.width / rect.width);
+    const endY = (e.clientY - rect.top) * (drawCanvas.height / rect.height);
+
     if (drawMode === "circle") {
       const radius = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
       currentShape = {
@@ -166,7 +172,7 @@ function createSectionEditor(index, imageSrc) {
         height: endY - startY
       };
     }
-    
+
     applyBlur();
     drawCanvas.getContext("2d").clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   });
@@ -174,22 +180,22 @@ function createSectionEditor(index, imageSrc) {
   function applyBlur() {
     const ctx = blurCanvas.getContext("2d");
     const blur = blurAmount.value;
-    
+
     ctx.clearRect(0, 0, blurCanvas.width, blurCanvas.height);
-    
+
     if (!currentShape) {
       ctx.filter = `blur(${blur}px)`;
       ctx.drawImage(baseImg, 0, 0, blurCanvas.width, blurCanvas.height);
       return;
     }
-    
+
     ctx.save();
     ctx.filter = `blur(${blur}px)`;
     ctx.drawImage(baseImg, 0, 0, blurCanvas.width, blurCanvas.height);
-    
+
     ctx.globalCompositeOperation = "destination-out";
     ctx.filter = "none";
-    
+
     if (currentShape.type === "circle") {
       ctx.beginPath();
       ctx.arc(currentShape.x, currentShape.y, currentShape.radius, 0, 2 * Math.PI);
@@ -197,7 +203,7 @@ function createSectionEditor(index, imageSrc) {
     } else if (currentShape.type === "rectangle") {
       ctx.fillRect(currentShape.x, currentShape.y, currentShape.width, currentShape.height);
     }
-    
+
     ctx.restore();
   }
 
@@ -206,20 +212,27 @@ function createSectionEditor(index, imageSrc) {
     getData: () => ({
       shape: currentShape,
       text: textInput.value,
-      blurAmount: blurAmount.value
+      blurAmount: blurAmount.value,
+      // Store the canvas dimensions when the shape was created
+      canvasWidth: blurCanvas.width,
+      canvasHeight: blurCanvas.height
     })
   };
 }
 
 function exportToHTML(sections, imageSrc) {
   const sectionsData = sections.map(section => section.getData());
-  
+
+  // Prompt user for presentation title
+  const presentationTitle = prompt("Enter a name for your presentation:", "My ScrolliTelli Story");
+  const finalTitle = presentationTitle && presentationTitle.trim() ? presentationTitle.trim() : "ScrolliTelli Presentation";
+
   let htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScrolliTelli Presentation</title>
+  <title>${escapeHtml(finalTitle)}</title>
   <style>
     * {
       margin: 0;
@@ -246,18 +259,20 @@ function exportToHTML(sections, imageSrc) {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
+      width: 66.666%;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1;
+      background-color: #000;
     }
     
     .image-wrapper {
       position: relative;
-      width: 40%;
-      max-width: 600px;
+      width: 90%;
+      max-width: 100%;
+      max-height: 90vh;
     }
     
     .image-wrapper img,
@@ -265,6 +280,8 @@ function exportToHTML(sections, imageSrc) {
       display: block;
       width: 100%;
       height: auto;
+      max-height: 90vh;
+      object-fit: contain;
     }
     
     .blur-canvas {
@@ -285,21 +302,22 @@ function exportToHTML(sections, imageSrc) {
       position: relative;
       z-index: 10;
       pointer-events: none;
+      margin-left: 66.666%;
+      width: 33.333%;
     }
     
     .text-section {
-      min-height: 100vh;
+      min-height: 80vh;
       display: flex;
       align-items: center;
-      padding: 60px;
+      padding: 40px 30px;
       pointer-events: auto;
     }
     
     .text-content {
-      width: 50%;
-      margin-left: 50%;
+      width: 100%;
       background: rgba(0, 0, 0, 0.85);
-      padding: 40px;
+      padding: 30px;
       border-radius: 8px;
       font-size: 18px;
       line-height: 1.8;
@@ -308,18 +326,29 @@ function exportToHTML(sections, imageSrc) {
     }
     
     .transition-spacer {
-      height: 100vh;
+      height: 80vh;
       pointer-events: none;
     }
     
     @media (max-width: 1024px) {
+      .image-container {
+        width: 100%;
+        height: 50vh;
+      }
+      
       .image-wrapper {
         width: 80%;
       }
       
+      .text-sections {
+        margin-left: 0;
+        width: 100%;
+        margin-top: 50vh;
+      }
+      
       .text-content {
         width: 90%;
-        margin-left: 5%;
+        margin: 0 auto;
         font-size: 16px;
       }
     }
@@ -358,7 +387,7 @@ function exportToHTML(sections, imageSrc) {
   <script>
     // Slow down scroll speed
     let scrollTimeout;
-    const scrollSmoothness = 0.3; // Lower = slower scrolling
+    const scrollSmoothness = 0.15; // Lower = slower scrolling
     
     window.addEventListener('wheel', function(e) {
       e.preventDefault();
@@ -401,8 +430,12 @@ function exportToHTML(sections, imageSrc) {
     baseImage.onload = () => {
       sectionsData.forEach((data, index) => {
         const canvas = canvases[index];
-        canvas.width = baseImage.offsetWidth;
-        canvas.height = baseImage.offsetHeight;
+        // Use the actual rendered image dimensions
+        const renderWidth = baseImage.width;
+        const renderHeight = baseImage.height;
+        
+        canvas.width = renderWidth;
+        canvas.height = renderHeight;
         
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -411,6 +444,10 @@ function exportToHTML(sections, imageSrc) {
           ctx.filter = 'blur(' + data.blurAmount + 'px)';
           ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
         } else {
+          // Calculate scale factors from editor canvas to export canvas
+          const scaleX = renderWidth / data.canvasWidth;
+          const scaleY = renderHeight / data.canvasHeight;
+          
           ctx.save();
           ctx.filter = 'blur(' + data.blurAmount + 'px)';
           ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
@@ -420,10 +457,21 @@ function exportToHTML(sections, imageSrc) {
           
           if (data.shape.type === 'circle') {
             ctx.beginPath();
-            ctx.arc(data.shape.x, data.shape.y, data.shape.radius, 0, 2 * Math.PI);
+            ctx.arc(
+              data.shape.x * scaleX, 
+              data.shape.y * scaleY, 
+              data.shape.radius * scaleX, 
+              0, 
+              2 * Math.PI
+            );
             ctx.fill();
           } else if (data.shape.type === 'rectangle') {
-            ctx.fillRect(data.shape.x, data.shape.y, data.shape.width, data.shape.height);
+            ctx.fillRect(
+              data.shape.x * scaleX, 
+              data.shape.y * scaleY, 
+              data.shape.width * scaleX, 
+              data.shape.height * scaleY
+            );
           }
           
           ctx.restore();
@@ -433,27 +481,40 @@ function exportToHTML(sections, imageSrc) {
     
     // Handle scroll-based image transitions
     function updateActiveSection() {
-      const scrollPosition = window.scrollY;
       const windowHeight = window.innerHeight;
       const sections = document.querySelectorAll('.text-section');
       const spacers = document.querySelectorAll('.transition-spacer');
       
+      // Find which section or spacer is currently most prominent in viewport
       let activeSection = 0;
+      let maxScore = -Infinity;
       
+      // Score each text section based on its position
       sections.forEach((section, index) => {
         const rect = section.getBoundingClientRect();
-        const sectionMiddle = rect.top + rect.height / 2;
+        // Calculate how centered this section is in the viewport
+        const sectionCenter = rect.top + rect.height / 2;
+        const viewportCenter = windowHeight / 2;
+        const distance = Math.abs(sectionCenter - viewportCenter);
+        const score = -distance; // Closer to center = higher score
         
-        if (sectionMiddle < windowHeight / 2) {
-          activeSection = index;
+        // Only consider sections that are at least partially visible
+        if (rect.bottom > 0 && rect.top < windowHeight) {
+          if (score > maxScore) {
+            maxScore = score;
+            activeSection = index;
+          }
         }
       });
       
-      // Check if we're in a transition spacer
+      // Check spacers - they get priority if they're in the middle of viewport
       spacers.forEach((spacer, index) => {
         const rect = spacer.getBoundingClientRect();
-        if (rect.top < windowHeight && rect.bottom > 0) {
-          // In transition zone - show next section's image
+        const spacerCenter = rect.top + rect.height / 2;
+        const viewportCenter = windowHeight / 2;
+        
+        // If spacer center is near viewport center, transition to next section
+        if (Math.abs(spacerCenter - viewportCenter) < windowHeight * 0.3) {
           activeSection = index + 1;
         }
       });
@@ -470,10 +531,62 @@ function exportToHTML(sections, imageSrc) {
     
     window.addEventListener('scroll', updateActiveSection);
     window.addEventListener('resize', () => {
-      baseImage.onload();
+      // Recalculate canvas dimensions when window resizes
+      sectionsData.forEach((data, index) => {
+        const canvas = canvases[index];
+        const renderWidth = baseImage.width;
+        const renderHeight = baseImage.height;
+        
+        canvas.width = renderWidth;
+        canvas.height = renderHeight;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (!data.shape) {
+          ctx.filter = 'blur(' + data.blurAmount + 'px)';
+          ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+        } else {
+          // Calculate scale factors from editor canvas to current canvas
+          const scaleX = renderWidth / data.canvasWidth;
+          const scaleY = renderHeight / data.canvasHeight;
+          
+          ctx.save();
+          ctx.filter = 'blur(' + data.blurAmount + 'px)';
+          ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+          
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.filter = 'none';
+          
+          if (data.shape.type === 'circle') {
+            ctx.beginPath();
+            ctx.arc(
+              data.shape.x * scaleX, 
+              data.shape.y * scaleY, 
+              data.shape.radius * scaleX, 
+              0, 
+              2 * Math.PI
+            );
+            ctx.fill();
+          } else if (data.shape.type === 'rectangle') {
+            ctx.fillRect(
+              data.shape.x * scaleX, 
+              data.shape.y * scaleY, 
+              data.shape.width * scaleX, 
+              data.shape.height * scaleY
+            );
+          }
+          
+          ctx.restore();
+        }
+      });
+      updateActiveSection();
     });
     
-    // Initialize
+    // Initialize - show first section's canvas
+    if (canvases.length > 0) {
+      canvases[0].classList.add('active');
+    }
     updateActiveSection();
   </script>
 </body>
@@ -483,7 +596,8 @@ function exportToHTML(sections, imageSrc) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'scrollitelli-presentation.html';
+  const filename = finalTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'scrollitelli-presentation';
+  a.download = filename + '.html';
   a.click();
   URL.revokeObjectURL(url);
 }

@@ -5,14 +5,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const numImgsInput = document.getElementById("num-imgs");
   let fileUploaded = false;
   let uploadedImage;
-  
+
 
   uploadInput.addEventListener("change", function () {
     const file = this.files[0];
 
     if (!file) {
       previewDiv.innerHTML = "No image selected";
-      
+
     } else {
       const reader = new FileReader();
       reader.onload = function (e) {
@@ -37,10 +37,10 @@ document.addEventListener("DOMContentLoaded", () => {
       fileUploaded = true;
     }
   });
-  
+
   nextPage.addEventListener("click", function () {
     const numImages = parseInt(numImgsInput.value);
-    
+
     if (!fileUploaded) {
       alert("Error: no image has been uploaded. Please upload an image.");
     } else if (!numImages || numImages < 1) {
