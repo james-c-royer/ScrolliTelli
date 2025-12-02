@@ -8,22 +8,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!imageArray || imageArray.length === 0) {
     editorContainer.innerHTML =
-      '<div style="padding: 40px; text-align: center;">No images found – go back and upload one.</div>';
+      '<div style="padding: 40px; text-align: center;">No images found — go back and upload one.</div>';
     return;
   }
 
-  const sections = [];
+  // Make sections array accessible to all section editors
+  window.sections = [];
 
-  // Create section editors – each section gets its own image
+  // Create section editors — each section gets its own image
   for (let i = 0; i < numSections; i++) {
     const sectionData = createSectionEditor(i, imageArray[i]);
-    sections.push(sectionData);
+    window.sections.push(sectionData);
     editorContainer.appendChild(sectionData.element);
   }
 
-  // Export functionality – now uses per-section images
+  // Export functionality — now uses per-section images
   exportBtn.addEventListener("click", () => {
-    exportToHTML(sections);
+    // Filter out deleted sections before export
+    const activeSections = window.sections.filter(s => !s.isDeleted());
+    if (activeSections.length === 0) {
+      alert("Cannot export: all sections have been deleted. Please keep at least one section.");
+      return;
+    }
+    exportToHTML(activeSections);
   });
 });
 
@@ -31,7 +38,11 @@ function createSectionEditor(index, imageSrc) {
   const sectionDiv = document.createElement("div");
   sectionDiv.className = "section-editor";
   sectionDiv.innerHTML = `
-    <div class="section-header">Section</div>
+    <div class="section-header">
+      Section
+      <button class="btn btn-success btn-sm add-section-btn" id="add-btn-${index}" style="float: right; margin-left: 10px;">Add Section</button>
+      <button class="btn btn-danger btn-sm delete-section-btn" id="delete-btn-${index}" style="float: right;">Delete</button>
+    </div>
     <div class="editor-content">
       <div class="image-editor">
         <div class="canvas-container" id="canvas-container-${index}">
@@ -46,6 +57,7 @@ function createSectionEditor(index, imageSrc) {
           <button class="btn btn-primary btn-sm" id="rect-btn-${index}">Draw Rectangle</button>
           <button class="btn btn-warning btn-sm" id="clear-btn-${index}">Clear Shape</button>
           <button class="btn btn-secondary btn-sm" id="replace-btn-${index}">Replace Image</button>
+          <button class="btn btn-danger btn-sm" id="remove-img-btn-${index}">Remove Image</button>
           <input type="file" accept="image/*" id="replace-input-${index}" style="display:none;">
         </div>
         <div class="blur-control">
@@ -73,11 +85,16 @@ function createSectionEditor(index, imageSrc) {
 
   const replaceBtn = sectionDiv.querySelector(`#replace-btn-${index}`);
   const replaceInput = sectionDiv.querySelector(`#replace-input-${index}`);
+  const removeImgBtn = sectionDiv.querySelector(`#remove-img-btn-${index}`);
+  
+  const deleteBtn = sectionDiv.querySelector(`#delete-btn-${index}`);
+  const addBtn = sectionDiv.querySelector(`#add-btn-${index}`);
 
   let currentShape = null;
   let isDrawing = false;
   let startX, startY;
   let drawMode = null;
+  let deleted = false;
 
   // Track this section's current image (used in export)
   let currentImage = imageSrc;
@@ -98,6 +115,57 @@ function createSectionEditor(index, imageSrc) {
 
     applyBlur();
   };
+
+  // Delete button functionality
+  deleteBtn.addEventListener("click", () => {
+    // Count how many sections are currently not deleted
+    const activeSectionsCount = window.sections.filter(s => !s.isDeleted()).length;
+    
+    if (activeSectionsCount <= 1) {
+      alert("Cannot delete the last remaining section. At least one section must remain.");
+      return;
+    }
+    
+    if (confirm("Are you sure you want to delete this section?")) {
+      deleted = true;
+      sectionDiv.style.opacity = "0.3";
+      sectionDiv.style.pointerEvents = "none";
+      
+      // Update localStorage to remove this image
+      const imageArray = JSON.parse(localStorage.getItem("images") || "[]");
+      imageArray.splice(index, 1);
+      localStorage.setItem("images", JSON.stringify(imageArray));
+      
+      // Optional: hide the section completely
+      sectionDiv.style.display = "none";
+    }
+  });
+
+  // Add section button functionality
+  addBtn.addEventListener("click", () => {
+    // Get the first non-deleted section's current image
+    const firstActiveSection = window.sections.find(s => !s.isDeleted());
+    if (!firstActiveSection) return;
+    
+    const firstImage = firstActiveSection.getData().image;
+    
+    // Update localStorage to add the new image
+    const imageArray = JSON.parse(localStorage.getItem("images") || "[]");
+    imageArray.push(firstImage);
+    localStorage.setItem("images", JSON.stringify(imageArray));
+    
+    // Create new section with the next index
+    const newIndex = window.sections.length;
+    const newSectionData = createSectionEditor(newIndex, firstImage);
+    window.sections.push(newSectionData);
+    
+    // Append to the editor container
+    const editorContainer = document.getElementById("editor-container");
+    editorContainer.appendChild(newSectionData.element);
+    
+    // Scroll to the new section
+    newSectionData.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   circleBtn.addEventListener("click", () => {
     drawMode = "circle";
@@ -241,8 +309,11 @@ function createSectionEditor(index, imageSrc) {
       imageArray[index] = currentImage;
       localStorage.setItem("images", JSON.stringify(imageArray));
 
-      // Update DOM image
+      // Update DOM image and show all elements
       baseImg.src = currentImage;
+      baseImg.style.display = "block";
+      blurCanvas.style.display = "block";
+      drawCanvas.style.display = "block";
 
       baseImg.onload = () => {
         const imgWidth = baseImg.width;
@@ -264,8 +335,29 @@ function createSectionEditor(index, imageSrc) {
     reader.readAsDataURL(file);
   });
 
+  // Remove Image functionality
+  removeImgBtn.addEventListener("click", () => {
+    if (confirm("Are you sure you want to remove the image from this section? This will create a text-only section.")) {
+      currentImage = null;
+      
+      // Update localStorage
+      const imageArray = JSON.parse(localStorage.getItem("images") || "[]");
+      imageArray[index] = null;
+      localStorage.setItem("images", JSON.stringify(imageArray));
+      
+      // Hide the image and canvases
+      baseImg.style.display = "none";
+      blurCanvas.style.display = "none";
+      drawCanvas.style.display = "none";
+      
+      // Clear the shape
+      currentShape = null;
+    }
+  });
+
   return {
     element: sectionDiv,
+    isDeleted: () => deleted,
     getData: () => ({
       image: currentImage,
       shape: currentShape,
@@ -385,6 +477,8 @@ function exportToHTML(sections) {
       font-size: 18px;
       line-height: 1.8;
       white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
       backdrop-filter: blur(10px);
     }
     
@@ -426,7 +520,9 @@ function exportToHTML(sections) {
 `;
 
   sectionsData.forEach((data, index) => {
-    htmlContent += `        <canvas id="canvas-${index}" class="blur-canvas"></canvas>\n`;
+    if (data.image) {
+      htmlContent += `        <canvas id="canvas-${index}" class="blur-canvas"></canvas>\n`;
+    }
   });
 
   htmlContent += `      </div>
@@ -485,23 +581,31 @@ function exportToHTML(sections) {
     const baseImage = document.getElementById('base-image');
     const canvases = [];
     
+    // Only add canvases for sections with images
     sectionsData.forEach((data, index) => {
-      const canvas = document.getElementById('canvas-' + index);
-      canvases.push(canvas);
+      if (data.image) {
+        const canvas = document.getElementById('canvas-' + index);
+        canvases.push({ canvas, index });
+      }
     });
 
-    // Preload per-section images
+    // Preload per-section images (only for sections with images)
     const sectionImages = sectionsData.map(data => {
+      if (!data.image) return null;
       const img = new Image();
-      img.src = data.image || "";
+      img.src = data.image;
       return img;
     });
 
     function renderCanvasForSection(index) {
       const data = sectionsData[index];
+      if (!data.image) return; // Skip text-only sections
+      
       const img = sectionImages[index];
-      const canvas = canvases[index];
-      if (!canvas || !img) return;
+      const canvasObj = canvases.find(c => c.index === index);
+      if (!canvasObj || !img) return;
+      
+      const canvas = canvasObj.canvas;
       const ctx = canvas.getContext('2d');
 
       const renderWidth = img.width || baseImage.width;
@@ -552,6 +656,7 @@ function exportToHTML(sections) {
 
     // Render all canvases after images load
     sectionImages.forEach((img, index) => {
+      if (!img) return; // Skip text-only sections
       if (img.complete) {
         renderCanvasForSection(index);
       } else {
@@ -560,51 +665,60 @@ function exportToHTML(sections) {
     });
 
     function updateActiveSection() {
-  const spacers = document.querySelectorAll(".transition-spacer");
-  const imageContainer = document.querySelector(".image-container");
+      const spacers = document.querySelectorAll(".transition-spacer");
+      const imageContainer = document.querySelector(".image-container");
 
-  const imageRect = imageContainer.getBoundingClientRect();
-  const imageMid = imageRect.top + imageRect.height / 2;
+      const imageRect = imageContainer.getBoundingClientRect();
+      const imageMid = imageRect.top + imageRect.height / 2;
 
-  let activeSection = 0;
-  const threshold = 0; // tweak if you want to shift the transition a bit
+      let activeSection = 0;
+      const threshold = 0;
 
-  // Active section = number of spacers whose bottom is above the image midpoint
-  spacers.forEach((spacer, index) => {
-    const rect = spacer.getBoundingClientRect();
-    const spacerBottom = rect.top + rect.height;
+      spacers.forEach((spacer, index) => {
+        const rect = spacer.getBoundingClientRect();
+        const spacerBottom = rect.top + rect.height;
 
-    if (spacerBottom < imageMid - threshold) {
-      activeSection = index + 1;
+        if (spacerBottom < imageMid - threshold) {
+          activeSection = index + 1;
+        }
+      });
+
+      // Activate correct blur canvas (only for sections with images)
+      canvases.forEach((canvasObj) => {
+        if (canvasObj.index === activeSection) {
+          canvasObj.canvas.classList.add("active");
+        } else {
+          canvasObj.canvas.classList.remove("active");
+        }
+      });
+
+      // Swap base image to match active section (if it has an image)
+      if (sectionsData[activeSection] && sectionsData[activeSection].image) {
+        baseImage.src = sectionsData[activeSection].image;
+        baseImage.style.display = "block";
+      } else if (sectionsData[activeSection] && !sectionsData[activeSection].image) {
+        // Text-only section - hide the base image
+        baseImage.style.display = "none";
+      }
     }
-  });
-
-  // Activate correct blur canvas
-  canvases.forEach((canvas, index) => {
-    if (index === activeSection) {
-      canvas.classList.add("active");
-    } else {
-      canvas.classList.remove("active");
-    }
-  });
-
-  // Swap base image to match active section
-  if (sectionsData[activeSection] && sectionsData[activeSection].image) {
-    baseImage.src = sectionsData[activeSection].image;
-  }
-}
     
     window.addEventListener('scroll', updateActiveSection);
     window.addEventListener('resize', () => {
-      sectionImages.forEach((img, index) => renderCanvasForSection(index));
+      sectionImages.forEach((img, index) => {
+        if (img) renderCanvasForSection(index);
+      });
       updateActiveSection();
     });
 
+    // Initialize first section
     if (canvases.length > 0) {
-      canvases[0].classList.add('active');
+      canvases[0].canvas.classList.add('active');
     }
     if (sectionsData[0] && sectionsData[0].image) {
       baseImage.src = sectionsData[0].image;
+      baseImage.style.display = "block";
+    } else if (sectionsData[0] && !sectionsData[0].image) {
+      baseImage.style.display = "none";
     }
     updateActiveSection();
   </script>
