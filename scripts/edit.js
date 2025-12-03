@@ -41,7 +41,7 @@ function createSectionEditor(index, imageSrc) {
     <div class="section-header">
       Section
       <button class="btn btn-success btn-sm add-section-btn" id="add-btn-${index}" style="float: right; margin-left: 10px;">Add Section</button>
-      <button class="btn btn-danger btn-sm delete-section-btn" id="delete-btn-${index}" style="float: right;">Delete</button>
+      <button class="btn btn-danger btn-sm delete-section-btn" id="delete-btn-${index}" style="float: right;">Delete Section</button>
     </div>
     <div class="editor-content">
       <div class="image-editor">
@@ -86,7 +86,7 @@ function createSectionEditor(index, imageSrc) {
   const replaceBtn = sectionDiv.querySelector(`#replace-btn-${index}`);
   const replaceInput = sectionDiv.querySelector(`#replace-input-${index}`);
   const removeImgBtn = sectionDiv.querySelector(`#remove-img-btn-${index}`);
-  
+
   const deleteBtn = sectionDiv.querySelector(`#delete-btn-${index}`);
   const addBtn = sectionDiv.querySelector(`#add-btn-${index}`);
 
@@ -120,22 +120,22 @@ function createSectionEditor(index, imageSrc) {
   deleteBtn.addEventListener("click", () => {
     // Count how many sections are currently not deleted
     const activeSectionsCount = window.sections.filter(s => !s.isDeleted()).length;
-    
+
     if (activeSectionsCount <= 1) {
       alert("Cannot delete the last remaining section. At least one section must remain.");
       return;
     }
-    
+
     if (confirm("Are you sure you want to delete this section?")) {
       deleted = true;
       sectionDiv.style.opacity = "0.3";
       sectionDiv.style.pointerEvents = "none";
-      
+
       // Update localStorage to remove this image
       const imageArray = JSON.parse(localStorage.getItem("images") || "[]");
       imageArray.splice(index, 1);
       localStorage.setItem("images", JSON.stringify(imageArray));
-      
+
       // Optional: hide the section completely
       sectionDiv.style.display = "none";
     }
@@ -146,23 +146,23 @@ function createSectionEditor(index, imageSrc) {
     // Get the first non-deleted section's current image
     const firstActiveSection = window.sections.find(s => !s.isDeleted());
     if (!firstActiveSection) return;
-    
+
     const firstImage = firstActiveSection.getData().image;
-    
+
     // Update localStorage to add the new image
     const imageArray = JSON.parse(localStorage.getItem("images") || "[]");
     imageArray.push(firstImage);
     localStorage.setItem("images", JSON.stringify(imageArray));
-    
+
     // Create new section with the next index
     const newIndex = window.sections.length;
     const newSectionData = createSectionEditor(newIndex, firstImage);
     window.sections.push(newSectionData);
-    
+
     // Append to the editor container
     const editorContainer = document.getElementById("editor-container");
     editorContainer.appendChild(newSectionData.element);
-    
+
     // Scroll to the new section
     newSectionData.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -339,17 +339,17 @@ function createSectionEditor(index, imageSrc) {
   removeImgBtn.addEventListener("click", () => {
     if (confirm("Are you sure you want to remove the image from this section? This will create a text-only section.")) {
       currentImage = null;
-      
+
       // Update localStorage
       const imageArray = JSON.parse(localStorage.getItem("images") || "[]");
       imageArray[index] = null;
       localStorage.setItem("images", JSON.stringify(imageArray));
-      
+
       // Hide the image and canvases
       baseImg.style.display = "none";
       blurCanvas.style.display = "none";
       drawCanvas.style.display = "none";
-      
+
       // Clear the shape
       currentShape = null;
     }

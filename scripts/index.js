@@ -1,17 +1,28 @@
 document.addEventListener("DOMContentLoaded", () => {
   const uploadInput = document.getElementById("upload");
   const previewDiv = document.getElementById("img-preview");
-  const nextPage = document.getElementById("finalize-btn");
+  const finalizeBtn = document.getElementById("finalize-btn");
   const numImgsInput = document.getElementById("num-imgs");
 
   let fileUploaded = false;
   let uploadedImage;
+
+  // Initially disable the button
+  finalizeBtn.classList.add("disabled");
+  finalizeBtn.style.pointerEvents = "none";
+  finalizeBtn.style.opacity = "0.5";
 
   uploadInput.addEventListener("change", function () {
     const file = this.files[0];
 
     if (!file) {
       previewDiv.innerHTML = "No image selected";
+      fileUploaded = false;
+
+      // Disable button
+      finalizeBtn.classList.add("disabled");
+      finalizeBtn.style.pointerEvents = "none";
+      finalizeBtn.style.opacity = "0.5";
 
     } else {
       const reader = new FileReader();
@@ -27,29 +38,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
         previewDiv.innerHTML = "";
         previewDiv.appendChild(img);
-
-        // ⛔️ OLD: localStorage.setItem("uploadedImage", uploadedImage);
-        // We no longer store a single image.
       };
       reader.readAsDataURL(file);
       fileUploaded = true;
+
+      // Enable button
+      finalizeBtn.classList.remove("disabled");
+      finalizeBtn.style.pointerEvents = "auto";
+      finalizeBtn.style.opacity = "1";
     }
   });
 
-  nextPage.addEventListener("click", function () {
+  finalizeBtn.addEventListener("click", function (e) {
     const numImages = parseInt(numImgsInput.value);
 
     if (!fileUploaded) {
+      e.preventDefault();
       alert("Error: no image has been uploaded. Please upload an image.");
+      return false;
     } else if (!numImages || numImages < 1) {
+      e.preventDefault();
       alert("Error: please enter a valid number of images (at least 1).");
+      return false;
     } else {
-
-      // ✅ NEW: Store an array of images (all copies of the uploaded image)
+      // Store an array of images (all copies of the uploaded image)
       const imageArray = Array(numImages).fill(uploadedImage);
       localStorage.setItem("images", JSON.stringify(imageArray));
 
-      window.location.href = "edit_pages.html";
+      // Allow navigation to proceed
+      return true;
     }
   });
 
