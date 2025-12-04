@@ -4,6 +4,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const finalizeBtn = document.getElementById("finalize-btn");
   const numImgsInput = document.getElementById("num-imgs");
 
+  // Clear any old cached images from localStorage when page loads
+  localStorage.removeItem("images");
+
   let fileUploaded = false;
   let uploadedImage;
 
