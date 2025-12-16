@@ -2,6 +2,9 @@
 
 This is a ScrolliTelli webpage creation tool intended for educators and other interested parties to create their own ScrolliTelli presentation. User can upload a series of images, apply specific blur settings to create a point of focus, create corresponding text sections, and then export their presentation as an html file to share with others. This tool is intended to be used on a desktop application, and is not designed with mobile devices in mind.
 
+## Note on Licenses
+This repository was created in collaboration with the computingDisciplines repository that can be found here: https://github.com/umresearcher/computingDisciplines/. The software here is distributed under the Apache License, and any content produced using it is distributed under CC-BY-SA license.
+
 ## Usage
 To begin using the ScrolliTelli creation tool, visit https://james-c-royer.github.io/ScrolliTelli/ where you will be sent to the home page. Here, you can upload your first image by using the "Click here to upload an image" button and then select how many sections you would like to create — both the image and number of sections can be changed later. The following image types are supported on most web browsers: JPG/JPEG, PNG, GIF, WebP. BMP, SVG, ICO. Other image files might work, but it depends on the web browser. Once you're ready to proceed, hit the "Finalize option selections" button to be sent to the next page.
 
